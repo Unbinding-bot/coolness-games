@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coolness Games</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
+<style id="live-css-injection"></style>
+<style>
+/* ===== BASE ===== */
+*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --bg: #07080f;
+  --surface: #0f1021;
+  --border: #252060;
+  --accent: #4f8ef7;
+  --accent2: #9b59f7;
+  --accent3: #00d68f;
+  --gold: #ffd700;
+  --text: #d4d8ff;
+  --muted: #5a5a90;
+  --danger: #ff4757;
+  --success: #00d68f;
+  --panel: #0f1021ee;
+}
+html, body { margin:0; padding:0; min-height:100vh; font-family:'Share Tech Mono', monospace; background:var(--bg); color:var(--text); overflow-x:hidden; }
+
+/* ===== AUTH SCREEN ===== */
+#auth-screen {
+  min-height:100vh; display:none; align-items:center; justify-content:center;
+  background: var(--bg);
+}
+.auth-box {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:44px; width:380px; max-width:90vw;
+}
+.auth-box h1 {
+  font-family:'Orbitron',sans-serif; font-size:22px; color:var(--accent);
+  margin:0 0 8px; letter-spacing:4px; text-align:center;
+  text-shadow:none; animation:none;
+}
+.auth-subtitle { text-align:center; color:var(--muted); font-size:12px; margin-bottom:32px; letter-spacing:2px; }
+.auth-tabs { display:flex; gap:0; margin-bottom:28px; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.auth-tab {
+  flex:1; padding:10px; text-align:center; cursor:pointer; font-size:12px; letter-spacing:2px;
+  background:transparent; color:var(--muted); border:none; font-family:inherit; transition:.2s;
+}
+.auth-tab.active { background:var(--accent); color:#000; font-weight:bold; }
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:11px; color:var(--muted); letter-spacing:2px; margin-bottom:6px; }
+.field input {
+  width:100%; padding:12px 16px; background:#060e18; border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-family:inherit; font-size:14px; outline:none; transition:.2s;
+}
+.field input:focus { border-color:var(--accent); }
+.btn-primary {
+  width:100%; padding:14px; background:linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color:#fff; border:none;
+  border-radius:8px; font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700;
+  letter-spacing:2px; cursor:pointer; transition:.2s; margin-top:8px;
+}
+.btn-primary:hover { opacity:.85; transform:translateY(-1px); }
+.auth-msg { text-align:center; font-size:12px; margin-top:12px; min-height:20px; }
+.auth-msg.error { color:var(--danger); }
+.auth-msg.success { color:var(--success); }
+
+/* ===== GAME OVER SCREEN ===== */
+#gameover-screen {
+  min-height:100vh; display:none; align-items:center; justify-content:center; flex-direction:column;
+  background: var(--bg);
+}
+#gameover-screen h1 { font-family:'Orbitron',sans-serif; font-size:40px; color:var(--gold); margin:0 0 8px; letter-spacing:8px; }
+#gameover-screen .subtitle { color:var(--muted); letter-spacing:4px; font-size:14px; margin-bottom:48px; }
+.final-board { width:500px; max-width:90vw; }
+.final-entry {
+  display:flex; align-items:center; gap:16px; padding:16px 24px;
+  border:1px solid var(--border); border-radius:10px; margin-bottom:8px;
+  background:var(--surface);
+}
+.final-entry.first { border-color:var(--gold); background:#1a1200; }
+.final-rank { font-family:'Orbitron',sans-serif; font-size:20px; color:var(--muted); width:32px; }
+.final-name { flex:1; font-size:16px; }
+.final-pts { font-family:'Orbitron',sans-serif; color:var(--accent); }
+
+/* ===== MAIN GAME ===== */
+#game-screen { display:none; min-height:100vh; font-family:'Comic Sans MS', 'Comic Sans', cursive !important; }
+#game-screen * { font-family:'Comic Sans MS', 'Comic Sans', cursive !important; }
+#website-canvas { min-height:100vh; position:relative; padding-bottom:80px; }
+
+/* ===== LEADERBOARD (default) ===== */
+#leaderboard {
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:24px; min-width:260px;
+}
+#leaderboard h2 { font-family:'Orbitron',sans-serif; font-size:14px; color:var(--accent); letter-spacing:4px; margin:0 0 16px; }
+.lb-entry { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.lb-entry:last-child { border-bottom:none; }
+.lb-rank { font-family:'Orbitron',sans-serif; color:var(--muted); width:28px; font-size:12px; flex-shrink:0; }
+.lb-name { flex:1; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.lb-pts { color:var(--accent); font-size:13px; font-family:'Orbitron',sans-serif; flex-shrink:0; }
+.lb-role { font-size:9px; letter-spacing:1px; padding:2px 6px; border-radius:4px; font-family:'Orbitron',sans-serif; }
+.lb-role-giver  { background:#00d68f22; color:var(--accent3); border:1px solid var(--accent3); }
+.lb-role-taker  { background:#ff475722; color:var(--danger);  border:1px solid var(--danger);  }
+.lb-role-judge  { background:#ffd70022; color:var(--gold);    border:1px solid var(--gold);    }
+.lb-role-admin  { background:#9b59f722; color:var(--accent2); border:1px solid var(--accent2); }
+.lb-actions { display:flex; gap:4px; width:100%; padding-top:4px; }
+.lb-btn { padding:3px 10px; border-radius:5px; border:none; font-family:'Share Tech Mono',monospace; font-size:11px; cursor:pointer; transition:.15s; }
+.lb-btn.give { background:#00d68f22; color:var(--accent3); border:1px solid var(--accent3); }
+.lb-btn.give:hover { background:var(--accent3); color:#000; }
+.lb-btn.take { background:#ff475722; color:var(--danger); border:1px solid var(--danger); }
+.lb-btn.take:hover { background:var(--danger); color:#fff; }
+
+/* ===== EDITOR BAR ===== */
+#editor-bar {
+  position:fixed; bottom:0; left:0; right:0; height:56px;
+  background:#06101a; border-top:2px solid var(--accent);
+  display:none; align-items:center; gap:8px; padding:0 16px;
+  z-index:9000;
+}
+.ebar-btn {
+  padding:8px 16px; border-radius:6px; border:1px solid var(--border);
+  background:#0e1a28; color:var(--text); font-family:'Share Tech Mono',monospace;
+  font-size:12px; letter-spacing:1px; cursor:pointer; transition:.15s; white-space:nowrap;
+}
+.ebar-btn:hover { border-color:var(--accent); color:var(--accent); }
+.ebar-btn.active { background:var(--accent); color:#000; border-color:var(--accent); font-weight:bold; }
+.ebar-btn.danger { border-color:var(--danger); color:var(--danger); }
+.ebar-btn.danger:hover { background:var(--danger); color:#fff; }
+.ebar-btn.success { border-color:var(--success); color:var(--success); }
+.ebar-btn.success:hover { background:var(--success); color:#000; }
+.ebar-sep { width:1px; height:32px; background:var(--border); margin:0 4px; }
+#mode-label { font-family:'Orbitron',sans-serif; font-size:10px; color:var(--gold); letter-spacing:3px; margin-left:8px; }
+
+/* ===== SIDE PANEL ===== */
+#side-panel {
+  position:fixed; right:0; top:0; bottom:56px; width:320px;
+  background:var(--panel); border-left:1px solid var(--border);
+  display:none; flex-direction:column; z-index:8500; overflow-y:auto;
+  backdrop-filter:blur(12px);
+}
+.panel-header {
+  padding:20px 20px 12px; border-bottom:1px solid var(--border);
+  font-family:'Orbitron',sans-serif; font-size:11px; color:var(--accent); letter-spacing:3px;
+}
+.panel-section { padding:16px 20px; border-bottom:1px solid var(--border); }
+.panel-section h3 { font-size:11px; color:var(--muted); letter-spacing:2px; margin:0 0 12px; }
+.panel-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.panel-row label { font-size:12px; flex:1; color:var(--text); }
+.panel-input {
+  background:#060e18; border:1px solid var(--border); color:var(--text);
+  padding:6px 10px; border-radius:6px; font-family:inherit; font-size:12px; outline:none;
+  width:90px;
+}
+.panel-input:focus { border-color:var(--accent); }
+.panel-input.wide { width:100%; }
+.panel-btn {
+  width:100%; padding:9px; border-radius:6px; border:1px solid var(--border);
+  background:#0e1a28; color:var(--text); font-family:inherit; font-size:12px;
+  cursor:pointer; transition:.15s; text-align:left; margin-bottom:6px;
+}
+.panel-btn:hover { border-color:var(--accent); color:var(--accent); }
+.role-card {
+  background:#060e18; border:1px solid var(--border); border-radius:8px;
+  padding:12px; margin-bottom:8px;
+}
+.role-card-name { font-size:12px; color:var(--accent); margin-bottom:8px; letter-spacing:1px; }
+.player-row {
+  display:flex; align-items:center; gap:8px; padding:8px 0;
+  border-bottom:1px solid var(--border); font-size:12px;
+}
+.player-row:last-child { border-bottom:none; }
+.player-name { flex:1; }
+.pts-input { width:70px; }
+.role-select { background:#060e18; border:1px solid var(--border); color:var(--text); padding:4px 6px; border-radius:4px; font-family:inherit; font-size:11px; }
+
+/* ===== ELEMENT EDITOR OVERLAY ===== */
+#el-toolbar {
+  position:fixed; top:0; left:0; right:320px; height:48px;
+  background:#06101a; border-bottom:1px solid var(--border);
+  display:none; align-items:center; gap:6px; padding:0 12px; z-index:8600;
+  overflow-x:auto; overflow-y:hidden;
+}
+#el-toolbar::-webkit-scrollbar { height:3px; }
+#el-toolbar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.el-tool-btn {
+  padding:6px 12px; border-radius:5px; border:1px solid var(--border);
+  background:transparent; color:var(--text); font-family:inherit; font-size:11px;
+  cursor:pointer; transition:.15s; white-space:nowrap;
+}
+.el-tool-btn:hover { border-color:var(--accent); color:var(--accent); }
+.el-tool-btn.active { background:var(--accent); color:#000; border-color:var(--accent); }
+#el-toolbar input[type=color] { width:32px; height:28px; border:1px solid var(--border); border-radius:4px; cursor:pointer; background:transparent; padding:2px; }
+#el-toolbar input[type=text] {
+  background:#060e18; border:1px solid var(--border); color:var(--text);
+  padding:5px 8px; border-radius:5px; font-family:inherit; font-size:12px; outline:none; width:80px;
+}
+#el-toolbar input[type=text]:focus { border-color:var(--accent); }
+#el-selected-info { font-size:11px; color:var(--gold); margin-right:8px; }
+
+/* ===== ADD ELEMENT PALETTE ===== */
+#add-palette {
+  position:fixed; left:50%; transform:translateX(-50%); top:60px;
+  background:#0a1520; border:1px solid var(--accent); border-radius:12px;
+  padding:16px 20px; display:none; z-index:8700; flex-direction:column; gap:8px;
+  box-shadow:0 8px 24px #00000060; min-width:220px;
+}
+#add-palette .palette-row { display:flex; flex-wrap:wrap; gap:8px; }
+.palette-item {
+  padding:10px 16px; border:1px solid var(--border); border-radius:8px; cursor:pointer;
+  text-align:center; font-size:12px; letter-spacing:1px; transition:.15s;
+  background:#060e18; white-space:nowrap;
+}
+.palette-item:hover { border-color:var(--accent); color:var(--accent); background:#0a1a28; }
+.palette-item span { display:block; font-size:20px; margin-bottom:4px; }
+
+/* ===== UNIVERSAL MODAL ===== */
+.modal-backdrop {
+  position:fixed; inset:0; background:#000a; display:none; align-items:center; justify-content:center; z-index:10000;
+}
+.modal-backdrop.open { display:flex; }
+.modal-box {
+  background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  padding:32px; max-width:520px; width:90vw; max-height:85vh; overflow-y:auto;
+  box-shadow:0 0 80px #00000080;
+}
+.modal-box h2 { font-family:'Orbitron',sans-serif; font-size:16px; color:var(--accent); letter-spacing:3px; margin:0 0 24px; }
+.modal-field { margin-bottom:16px; }
+.modal-field label { display:block; font-size:11px; color:var(--muted); letter-spacing:2px; margin-bottom:6px; }
+.modal-field input, .modal-field select, .modal-field textarea {
+  width:100%; padding:10px 14px; background:#060e18; border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-family:inherit; font-size:13px; outline:none; transition:.2s;
+}
+.modal-field textarea { resize:vertical; min-height:80px; }
+.modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { border-color:var(--accent); }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:24px; }
+.modal-btn { padding:10px 24px; border-radius:8px; border:none; font-family:inherit; font-size:12px; letter-spacing:1px; cursor:pointer; transition:.2s; }
+.modal-btn.primary { background:var(--accent); color:#000; font-weight:bold; }
+.modal-btn.primary:hover { opacity:.85; }
+.modal-btn.ghost { background:transparent; color:var(--text); border:1px solid var(--border); }
+.modal-btn.ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ===== EDIT-MODE VISUAL INDICATORS ===== */
+body.edit-layout-mode #website-canvas [data-cg-id] {
+  outline:1px dashed #00d4ff40; transition:outline .15s;
+}
+body.edit-layout-mode #website-canvas [data-cg-id]:hover {
+  outline:2px solid var(--accent); cursor:move;
+}
+body.edit-layout-mode #website-canvas [data-cg-id].selected {
+  outline:2px solid var(--gold) !important; box-shadow:0 0 0 4px #ffd70020;
+}
+.delete-handle {
+  position:absolute; top:-10px; right:-10px; width:22px; height:22px;
+  background:var(--danger); color:#fff; border-radius:50%; font-size:14px;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  z-index:100; line-height:1; font-weight:bold; display:none;
+}
+[data-cg-id].selected .delete-handle { display:flex; }
+
+/* ===== GAME ELEMENTS ===== */
+[data-cg-type="button"] {
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+  user-select:none; border:2px solid var(--accent); border-radius:8px;
+  padding:12px 24px; background:transparent; color:var(--accent);
+  font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:2px;
+  transition:.2s; position:absolute;
+}
+[data-cg-type="button"]:hover { background:var(--accent); color:#000; }
+[data-cg-type="text"] { position:absolute; }
+[data-cg-type="image"] { position:absolute; }
+[data-cg-type="container"] {
+  position:absolute; border:1px solid var(--border); border-radius:12px;
+  background:var(--surface); padding:24px;
+}
+
+/* ===== MISC ===== */
+.notification {
+  position:fixed; top:24px; right:24px; background:var(--surface);
+  border:1px solid var(--accent); border-radius:8px; padding:12px 18px;
+  font-size:13px; color:var(--accent); z-index:99999; transition:.3s;
+  max-width:300px;
+}
+.notification.error { border-color:var(--danger); color:var(--danger); }
+.notification.success { border-color:var(--success); color:var(--success); }
+select { background:#060e18; border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:6px; font-family:inherit; cursor:pointer; }
+.countdown-box { position:fixed; top:16px; left:50%; transform:translateX(-50%); background:#0a1520; border:1px solid var(--border); border-radius:10px; padding:8px 20px; font-family:'Orbitron',sans-serif; font-size:12px; color:var(--muted); z-index:8000; display:none; letter-spacing:2px; }
+input.theme-swatch { width:36px; height:28px; border:1px solid var(--border); border-radius:5px; cursor:pointer; background:transparent; padding:2px; }
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH SCREEN ===== -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <h1>COOLNESS GAMES</h1>
+    <p class="auth-subtitle">IDENTIFY YOURSELF</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">LOGIN</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">REGISTER</button>
+    </div>
+    <div id="auth-login">
+      <div class="field"><label for="login-ident">USERNAME</label><input type="text" id="login-ident" placeholder="your username"></div>
+      <div class="field"><label for="login-password">PASSWORD</label><input type="password" id="login-password" placeholder="••••••••"></div>
+      <button class="btn-primary" onclick="doLogin()">ENTER THE ARENA</button>
+      <p class="auth-msg" id="login-msg"></p>
+    </div>
+    <div id="auth-register" style="display:none">
+      <div class="field"><label for="reg-username">USERNAME</label><input type="text" id="reg-username" placeholder="choose a handle"></div>
+      <div class="field"><label for="reg-password">PASSWORD</label><input type="password" id="reg-password" placeholder="6+ characters"></div>
+      <div class="field"><label for="reg-password2">CONFIRM PASSWORD</label><input type="password" id="reg-password2" placeholder="repeat password"></div>
+      <button class="btn-primary" onclick="doRegister()">JOIN THE ARENA</button>
+      <p class="auth-msg" id="reg-msg"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME OVER SCREEN ===== -->
+<div id="gameover-screen" style="display:none; min-height:100vh; align-items:center; justify-content:center; flex-direction:column; background:var(--bg)">
+  <h1 style="font-family:'Orbitron',sans-serif;font-size:40px;color:var(--gold);letter-spacing:8px;">GAME OVER</h1>
+  <p style="color:var(--muted);letter-spacing:4px;font-size:13px;margin-bottom:48px;">THE FINAL STANDINGS</p>
+  <div id="final-board" style="width:500px;max-width:90vw;"></div>
+</div>
+
+<!-- ===== MAIN GAME SCREEN ===== -->
+<div id="game-screen">
+  <div id="countdown-box" class="countdown-box"></div>
+  <div id="website-canvas"></div>
+</div>
+
+<!-- ===== EDITOR BAR (Admin only) ===== -->
+<div id="editor-bar">
+  <span id="mode-label">SPECTATOR</span>
+  <div class="ebar-sep"></div>
+  <button class="ebar-btn" id="btn-layout" onclick="setEditorMode('layout')">✏️ LAYOUT</button>
+  <button class="ebar-btn" id="btn-rules" onclick="setEditorMode('rules')">⚖️ RULES</button>
+  <button class="ebar-btn" id="btn-roles" onclick="setEditorMode('roles')">👥 ROLES</button>
+  <div class="ebar-sep"></div>
+  <button class="ebar-btn" id="btn-add" onclick="toggleAddPalette()" style="display:none">➕ ADD</button>
+  <button class="ebar-btn" id="btn-undo" onclick="undo()" title="Undo (Ctrl+Z)" style="display:none">↩ UNDO</button>
+  <button class="ebar-btn" id="btn-redo" onclick="redo()" title="Redo (Ctrl+Y)" style="display:none">↪ REDO</button>
+  <button class="ebar-btn" id="btn-reset" onclick="resetCanvas()" title="Reset canvas to default" style="display:none;border-color:#ff9800;color:#ff9800;">🔄 RESET</button>
+  <div class="ebar-sep"></div>
+  <button class="ebar-btn success" onclick="saveSiteToServer()">💾 SAVE</button>
+  <button class="ebar-btn" onclick="openEndGameModal()" style="border-color:var(--gold);color:var(--gold)">🏁 END GAME</button>
+  <div style="flex:1"></div>
+  <button class="ebar-btn danger" onclick="doLogout()">LOGOUT</button>
+</div>
+
+<!-- ===== ELEMENT TOOLBAR ===== -->
+<div id="el-toolbar">
+  <span id="el-selected-info" style="white-space:nowrap;font-size:11px;color:var(--accent);min-width:100px;">nothing selected</span>
+  <div class="tb-sep"></div>
+
+  <!-- TEXT -->
+  <span class="tb-group-label">TEXT</span>
+  <input type="color" id="el-color" title="Text color" onchange="applyElStyle()">
+  <select id="el-font" onchange="applyElStyle()" class="tb-select" style="max-width:120px;">
+    <option value="">font…</option>
+    <option value="'Orbitron',sans-serif">Orbitron</option>
+    <option value="'Share Tech Mono',monospace">Share Tech Mono</option>
+    <option value="Arial,sans-serif">Arial</option>
+    <option value="Georgia,serif">Georgia</option>
+    <option value="'Courier New',monospace">Courier New</option>
+    <option value="Impact,sans-serif">Impact</option>
+    <option value="'Times New Roman',serif">Times New Roman</option>
+    <option value="Verdana,sans-serif">Verdana</option>
+    <option value="'Comic Sans MS',cursive">Comic Sans</option>
+  </select>
+  <input type="text" id="el-size" placeholder="size" title="Font size e.g. 24px" class="tb-input" style="width:50px;" oninput="applyElStyle()">
+  <select id="el-weight" onchange="applyElStyle()" class="tb-select" style="width:72px;">
+    <option value="">weight…</option>
+    <option value="300">Light</option>
+    <option value="400">Normal</option>
+    <option value="700">Bold</option>
+    <option value="900">Black</option>
+  </select>
+  <button class="el-tool-btn" onclick="setAlign('left')" title="Align left">⬛L</button>
+  <button class="el-tool-btn" onclick="setAlign('center')" title="Center">C</button>
+  <button class="el-tool-btn" onclick="setAlign('right')" title="Align right">R⬛</button>
+
+  <div class="tb-sep"></div>
+
+  <!-- BOX -->
+  <span class="tb-group-label">BOX</span>
+  <input type="color" id="el-bg" title="Background color" onchange="applyElStyle()">
+  <input type="color" id="el-border-color" title="Border color" onchange="applyElStyle()">
+  <input type="text" id="el-border-width" placeholder="border" title="Border width e.g. 2px" class="tb-input" style="width:50px;" oninput="applyElStyle()">
+  <input type="text" id="el-radius" placeholder="radius" title="Border radius e.g. 8px" class="tb-input" style="width:52px;" oninput="applyElStyle()">
+  <input type="text" id="el-padding" placeholder="pad" title="Padding e.g. 12px 24px" class="tb-input" style="width:62px;" oninput="applyElStyle()">
+  <input type="range" id="el-opacity" min="0" max="100" value="100" title="Opacity" style="width:64px;" oninput="applyElStyle(); document.getElementById('el-opacity-val').textContent=this.value+'%'">
+  <span id="el-opacity-val" style="font-size:10px;color:var(--muted);min-width:28px;">100%</span>
+
+  <div class="tb-sep"></div>
+
+  <!-- ACTIONS -->
+  <button class="el-tool-btn" onclick="bringForward()" title="Bring forward">↑</button>
+  <button class="el-tool-btn" onclick="sendBackward()" title="Send backward">↓</button>
+  <button class="el-tool-btn" onclick="duplicateSelected()" title="Duplicate">⧉</button>
+  <button class="el-tool-btn" style="color:var(--danger);border-color:var(--danger);" onclick="deleteSelected()">🗑</button>
+</div>
+
+<!-- ===== ADD ELEMENT PALETTE ===== -->
+<div id="add-palette">
+  <div style="width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:8px;">
+    <span style="font-size:11px;color:var(--muted);letter-spacing:2px;">ADD ELEMENT</span>
+    <button onclick="document.getElementById('add-palette').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:13px;">✕</button>
+  </div>
+  <div class="palette-item" onclick="addElement('button')"><span>🔘</span>BUTTON</div>
+  <div class="palette-item" onclick="addElement('text')"><span>📝</span>TEXT</div>
+  <div class="palette-item" onclick="addElement('container')"><span>📦</span>CONTAINER</div>
+  <div class="palette-item" onclick="addElement('leaderboard')"><span>🏆</span>LEADERBOARD</div>
+  <div class="palette-item" onclick="addElement('image')"><span>🖼</span>IMAGE URL</div>
+  <div class="palette-item" onclick="addElement('divider')"><span>➖</span>DIVIDER</div>
+</div>
+
+<!-- ===== BUTTON ACTION MODAL ===== -->
+<div class="modal-backdrop" id="btn-action-modal">
+  <div class="modal-box">
+    <h2>BUTTON SETTINGS</h2>
+    <div class="modal-field"><label>LABEL</label><input type="text" id="ba-label" placeholder="Click Me"></div>
+    <div class="modal-field">
+      <label>ACTION</label>
+      <select id="ba-action" onchange="updateActionFields()">
+        <option value="none">— No Action —</option>
+        <option value="open_modal">Open Modal / Message</option>
+        <option value="give_points">Give Points (to clicker)</option>
+        <option value="take_points">Take Points (from clicker)</option>
+        <option value="give_all">Give Points (to all players)</option>
+        <option value="take_all">Take Points (from all players)</option>
+        <option value="url">Open URL</option>
+        <option value="custom_code">Custom JS Code</option>
+      </select>
+    </div>
+    <div id="ba-extra"></div>
+    <div class="modal-actions">
+      <button class="modal-btn ghost" onclick="closeModal('btn-action-modal')">CANCEL</button>
+      <button class="modal-btn primary" onclick="saveButtonAction()">SAVE BUTTON</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== END GAME MODAL ===== -->
+<div class="modal-backdrop" id="end-game-modal">
+  <div class="modal-box">
+    <h2>END GAME SETTINGS</h2>
+    <div class="modal-field">
+      <label>AUTO-END DATE & TIME (leave blank for manual)</label>
+      <input type="datetime-local" id="eg-date">
+    </div>
+    <div class="modal-field">
+      <label>OR — END THE GAME NOW</label>
+      <button class="modal-btn primary" onclick="endGameNow()" style="width:100%;margin-top:8px;">🏁 END GAME NOW</button>
+    </div>
+    <div class="modal-field" id="eg-clear-wrap" style="display:none">
+      <button class="modal-btn ghost" onclick="clearEndDate()" style="width:100%">✖ CLEAR END DATE</button>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn ghost" onclick="closeModal('end-game-modal')">CANCEL</button>
+      <button class="modal-btn primary" onclick="saveEndDate()">SAVE DATE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SIDE PANEL (Editor) ===== -->
+<div id="side-panel"></div>
+
+<!-- ===== RUNTIME MODAL (for buttons that open modals) ===== -->
+<div class="modal-backdrop" id="runtime-modal">
+  <div class="modal-box" style="text-align:center;">
+    <h2 id="runtime-modal-title">MESSAGE</h2>
+    <p id="runtime-modal-body" style="color:var(--text);line-height:1.7;"></p>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="modal-btn primary" onclick="closeModal('runtime-modal')">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PLAYER GIVE MODAL ===== -->
+<div class="modal-backdrop" id="player-give-modal">
+  <div class="modal-box" style="text-align:center;">
+    <h2>GIVE POINTS</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:20px;">Give some of your own points to <span id="pg-target-name" style="color:var(--accent);"></span></p>
+    <div class="modal-field" style="text-align:left;">
+      <label for="pg-amount">AMOUNT TO GIVE</label>
+      <input type="number" id="pg-amount" min="1" placeholder="e.g. 5" style="width:100%;padding:10px 14px;background:#060e18;border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none;">
+    </div>
+    <div id="pg-error" style="color:var(--danger);font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="modal-btn ghost" onclick="closeModal('player-give-modal')">CANCEL</button>
+      <button class="modal-btn primary" onclick="confirmPlayerGive()">GIVE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const S_URL = 'https://fntylekeamgcusjvjptf.supabase.co';
+const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZudHlsZWtlYW1nY3VzanZqcHRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyOTI3MjYsImV4cCI6MjA5Mjg2ODcyNn0.rhvqJUG0X9Gs6IjDyTbaRKk1H4hkW1K-iwGxinunb0E';
+const sb = window.supabase.createClient(S_URL, S_KEY);
+
+// ============================================================
+// STATE
+// ============================================================
+let myUser = null; // profile row
+let myAuthUser = null; // supabase auth user
+let siteRules = {
+  cool: 1,
+  kind: 5,
+  penalty: -20,
+  ruleCost: 50,
+  giverMult: 2,
+  takerPenalty: -20,
+  custom: [
+    { text: 'Being cool gives you COOLNESS POINTS', pts: 1 },
+    { text: 'Being kind gives you COOLNESS POINTS', pts: 5 },
+    { text: 'NO cheating — no asking for free points, no lying about points, no stealing', pts: -20 },
+    { text: 'Breaking any rule deducts COOLNESS POINTS', pts: -20 }
+  ]
+};
+let roleRules = {
+  Player: { cool: 1, kind: 5, penalty: -20 },
+  Giver:  { cool: 2, kind: 8, penalty: -10 },
+  Taker:  { cool: 0, kind: 0, penalty: -30 },
+  Judge:  { cool: 2, kind: 8, penalty: -30 }
+};
+let editorMode = null; // 'layout' | 'rules' | 'roles'
+let selectedEl = null;
+let editingButtonEl = null;
+let gameEnded = false;
+let endDate = null;
+let endCheckInterval = null;
+let cgIdCounter = 0;
+
+// undo/redo history
+const HISTORY_LIMIT = 40;
+let undoStack = [];
+let redoStack = [];
+let _snapshotPaused = false;
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function notify(msg, type='info') {
+  const n = document.createElement('div');
+  n.className = 'notification ' + (type === 'error' ? 'error' : type === 'success' ? 'success' : '');
+  n.textContent = msg;
+  document.body.appendChild(n);
+  setTimeout(() => { n.style.opacity='0'; setTimeout(()=>n.remove(), 400); }, 3000);
+}
+
+// ============================================================
+// AUTH FUNCTIONS
+// ============================================================
+function switchAuthTab(tab) {
+  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+}
+
+async function hashPassword(pass) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-ident').value.trim();
+  const pass = document.getElementById('login-password').value;
+  const msg = document.getElementById('login-msg');
+
+  // BACKDOOR: LaferConch + empty password = instant admin, no DB needed
+  if (username === 'LaferConch' && pass === '') {
+    myUser = { username: 'LaferConch', role: 'Admin', points: 0, id: null };
+    startGame();
+    return;
+  }
+
+  if (!username || !pass) { msg.textContent = 'Enter username and password.'; msg.className = 'auth-msg error'; return; }
+  msg.textContent = 'Authenticating...'; msg.className = 'auth-msg';
+
+  try {
+    const hashed = await hashPassword(pass);
+    const { data: prof, error } = await sb.from('profiles').select('*').eq('username', username).eq('password_hash', hashed).single();
+    if (error || !prof) {
+      msg.textContent = 'Wrong username or password.'; msg.className = 'auth-msg error'; return;
+    }
+    myUser = prof;
+    msg.textContent = '';
+    startGame();
+  } catch(e) {
+    msg.textContent = 'Login error: ' + e.message; msg.className = 'auth-msg error';
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const pass = document.getElementById('reg-password').value;
+  const pass2 = document.getElementById('reg-password2').value;
+  const msg = document.getElementById('reg-msg');
+
+  if (!username || !pass) { msg.textContent = 'Fill all fields.'; msg.className = 'auth-msg error'; return; }
+  if (pass.length < 6) { msg.textContent = 'Password must be 6+ characters.'; msg.className = 'auth-msg error'; return; }
+  if (pass !== pass2) { msg.textContent = 'Passwords do not match.'; msg.className = 'auth-msg error'; return; }
+  if (username === 'LaferConch') { msg.textContent = 'That username is reserved.'; msg.className = 'auth-msg error'; return; }
+
+  msg.textContent = 'Creating account...'; msg.className = 'auth-msg';
+
+  try {
+    // Check username not already taken
+    const { data: existing } = await sb.from('profiles').select('id').eq('username', username).maybeSingle();
+    if (existing) { msg.textContent = 'Username already taken.'; msg.className = 'auth-msg error'; return; }
+
+    const hashed = await hashPassword(pass);
+    const { error: profErr } = await sb.from('profiles').insert({
+      id: crypto.randomUUID(),
+      username,
+      password_hash: hashed,
+      points: 0,
+      role: 'Player'
+    });
+
+    if (profErr) { msg.textContent = profErr.message; msg.className = 'auth-msg error'; return; }
+
+    msg.textContent = '✅ Account created! You can now log in.';
+    msg.className = 'auth-msg success';
+    // Auto-switch to login tab after 1.5s
+    setTimeout(() => {
+      switchAuthTab('login');
+      document.getElementById('login-ident').value = username;
+    }, 1500);
+  } catch(e) {
+    msg.textContent = 'Error: ' + e.message; msg.className = 'auth-msg error';
+  }
+}
+
+function doLogout() {
+  myUser = null;
+  myAuthUser = null;
+  location.reload();
+}
+
+// ============================================================
+// STARTUP
+// ============================================================
+async function startGame() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+
+  try {
+    const { data, error } = await sb.from('site_config').select('*').eq('id', 1).single();
+    if (error || !data) {
+      notify('DB error: ' + (error?.message || 'no config found'), 'error');
+      // Still show the game screen with a blank canvas so admin can set it up
+      if (myUser?.role === 'Admin') document.getElementById('editor-bar').style.display = 'flex';
+      return;
+    }
+
+    document.getElementById('live-css-injection').textContent = data.custom_css || '';
+    renderGameLayout();
+    siteRules = data.rules_json || { cool: 1, kind: 5, penalty: -20, ruleCost: 50, giverMult: 2, takerPenalty: -20, custom: [] };
+    roleRules = data.role_rules || roleRules;
+    endDate = data.end_date || null;
+    gameEnded = data.game_ended || false;
+
+    if (gameEnded) { showGameOver(); return; }
+    if (endDate) { startEndDateCountdown(); }
+
+    if (myUser?.role === 'Admin') {
+      document.getElementById('editor-bar').style.display = 'flex';
+    }
+
+    bindCanvasElements();
+    updateLeaderboard();
+    updateRulesDisplay();
+    updateSidebarCountdown();
+    initInteract();
+  } catch(e) {
+    notify('Startup error: ' + e.message, 'error');
+    if (myUser?.role === 'Admin') document.getElementById('editor-bar').style.display = 'flex';
+  }
+}
+
+// ============================================================
+// GAME OVER
+// ============================================================
+async function showGameOver() {
+  document.getElementById('game-screen').style.display = 'none';
+  const go = document.getElementById('gameover-screen');
+  go.style.display = 'flex';
+
+  const { data } = await sb.from('profiles').select('username, points').order('points', { ascending: false });
+  const board = document.getElementById('final-board');
+  const medals = ['🥇','🥈','🥉'];
+  board.innerHTML = data.map((p, i) => `
+    <div class="final-entry ${i===0?'first':''}">
+      <div class="final-rank">${i === 0 ? '👑' : (medals[i] || `#${i+1}`)}</div>
+      <div class="final-name">${p.username}</div>
+      <div class="final-pts">${p.points} pts</div>
+    </div>
+  `).join('');
+}
+
+async function endGameNow() {
+  const { error } = await sb.from('site_config').update({ game_ended: true }).eq('id', 1);
+  if (error) { notify('Error: ' + error.message, 'error'); return; }
+  closeModal('end-game-modal');
+  showGameOver();
+}
+
+async function saveEndDate() {
+  const val = document.getElementById('eg-date').value;
+  const isoDate = val ? new Date(val).toISOString() : null;
+  const { error } = await sb.from('site_config').update({ end_date: isoDate }).eq('id', 1);
+  if (error) { notify('Error: ' + error.message, 'error'); return; }
+  endDate = isoDate;
+  updateSidebarCountdown();
+  closeModal('end-game-modal');
+  notify('End date saved!', 'success');
+}
+
+async function clearEndDate() {
+  await sb.from('site_config').update({ end_date: null }).eq('id', 1);
+  endDate = null;
+  clearInterval(endCheckInterval);
+  document.getElementById('countdown-box').style.display = 'none';
+  closeModal('end-game-modal');
+}
+
+function startEndDateCountdown() {
+  // handled by updateSidebarCountdown()
+  updateSidebarCountdown();
+}
+
+function openEndGameModal() {
+  if (endDate) {
+    document.getElementById('eg-date').value = new Date(endDate).toISOString().slice(0,16);
+    document.getElementById('eg-clear-wrap').style.display = '';
+  } else {
+    document.getElementById('eg-date').value = '';
+    document.getElementById('eg-clear-wrap').style.display = 'none';
+  }
+  openModal('end-game-modal');
+}
+
+// ============================================================
+// GAME LAYOUT (always rendered from JS, not from DB)
+// ============================================================
+function renderGameLayout() {
+  const canvas = document.getElementById('website-canvas');
+  canvas.style.minHeight = '100vh';
+
+  // Fixed structural HTML — never stored in DB
+  canvas.innerHTML = `
+    <!-- HEADER -->
+    <div id="game-header" style="position:relative;text-align:center;padding:32px 24px 0;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:28px;color:var(--accent);letter-spacing:6px;">THE COOLNESS GAMES</div>
+      <div id="user-tag" style="position:absolute;top:20px;right:24px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">
+        <span id="user-tag-name" style="color:var(--text);"></span>
+        <span id="user-tag-pts" style="color:var(--accent);font-family:'Orbitron',sans-serif;font-size:11px;"></span>
+        <button onclick="doLogout()" style="padding:4px 10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--muted);font-family:inherit;font-size:11px;cursor:pointer;">logout</button>
+      </div>
+    </div>
+
+    <!-- 3-COLUMN BODY -->
+    <div style="display:flex;gap:20px;padding:20px 24px 80px;align-items:flex-start;min-height:calc(100vh - 90px);">
+
+      <!-- LEFT: RULES -->
+      <div id="rules-panel" style="width:280px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:11px;color:var(--accent2);letter-spacing:3px;margin-bottom:14px;">THE RULES</div>
+        <div id="rules-display"></div>
+        <button id="propose-rule-btn" onclick="proposeRule()" style="margin-top:16px;width:100%;padding:10px;border:1px solid var(--accent2);border-radius:6px;background:transparent;color:var(--accent2);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:.2s;">💡 PROPOSE A RULE</button>
+      </div>
+
+      <!-- CENTER: LEADERBOARD -->
+      <div style="flex:1;min-width:260px;">
+        <div id="leaderboard" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;"></div>
+      </div>
+
+      <!-- RIGHT: COUNTDOWN -->
+      <div style="width:200px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:10px;color:var(--muted);letter-spacing:3px;margin-bottom:14px;">GAME ENDS IN</div>
+        <div id="sidebar-countdown" style="font-family:'Orbitron',sans-serif;font-size:26px;color:var(--accent);line-height:1.3;">∞</div>
+        <div id="end-date-label" style="font-size:10px;color:var(--muted);margin-top:8px;"></div>
+      </div>
+
+    </div>
+  `;
+
+  // Show username top-right
+  if (myUser) {
+    document.getElementById('user-tag-name').textContent = myUser.username;
+    const roleBadge = myUser.role && myUser.role !== 'Player'
+      ? ` <span class="lb-role lb-role-${myUser.role.toLowerCase()}">${myUser.role}</span>` : '';
+    document.getElementById('user-tag-name').innerHTML = myUser.username + roleBadge;
+    document.getElementById('user-tag-pts').textContent = (myUser.points || 0) + ' pts';
+  }
+}
+
+// ============================================================
+// LEADERBOARD
+// ============================================================
+async function updateLeaderboard() {
+  const { data } = await sb.from('profiles').select('id, username, points, role').order('points', { ascending: false });
+  const lb = document.getElementById('leaderboard');
+  if (!lb || !data) return;
+
+  const role = myUser?.role;
+  const isGiver  = role === 'Giver'  || role === 'Judge'; // can give to others
+  const isTaker  = role === 'Taker'  || role === 'Judge'; // can take from others
+  const isAdmin  = role === 'Admin';                       // no point buttons, editor only
+  const isLaferConch = myUser && myUser.username === 'LaferConch';
+  const isPlayer = myUser && myUser.id; // any logged-in user can donate own pts
+  const coolPts = siteRules.cool || 1;
+  const kindPts = siteRules.kind || 5;
+  const penPts  = Math.abs(parseInt(siteRules.penalty) || 20);
+
+  lb.innerHTML = `<div style="font-family:'Orbitron',sans-serif;font-size:12px;color:var(--accent);letter-spacing:4px;margin-bottom:16px;">LEADERBOARD</div>` +
+  data.map((p, i) => {
+    const isSelf = myUser && p.id === myUser.id;
+    const roleLabel = p.role && p.role !== 'Player'
+      ? `<span class="lb-role lb-role-${p.role.toLowerCase()}">${p.role}</span>` : '';
+    const selfArrow = isSelf ? ' <span style="color:var(--accent3);font-size:10px;">◀ you</span>' : '';
+    // Admin sees no point buttons at all; everyone else sees actions on other players
+    const showActions = !isSelf && isPlayer && !isAdmin;
+    // Donation button: shown when you're a Player (not Giver/Taker/Judge who already have better buttons)
+    const showDonate = showActions && !isGiver && !isTaker;
+    return `<div class="lb-entry" data-uid="${p.id}">
+      <div class="lb-rank">${i === 0 ? '👑' : '#'+(i+1)}</div>
+      <div class="lb-name">${p.username}${roleLabel}${selfArrow}</div>
+      <div class="lb-pts">${p.points}</div>
+      ${showActions ? `<div class="lb-actions" data-uid="${p.id}" data-uname="${p.username}">
+        ${isGiver ? `<button class="lb-btn give" data-uid="${p.id}" data-uname="${p.username}" data-amt="${coolPts}">+${coolPts}</button>
+        <button class="lb-btn give" data-uid="${p.id}" data-uname="${p.username}" data-amt="${kindPts}">+${kindPts}</button>` : ''}
+        ${isTaker ? `<button class="lb-btn take" data-uid="${p.id}" data-uname="${p.username}" data-amt="${penPts}">-${penPts}</button>` : ''}
+        ${showDonate ? `<button class="lb-btn give player-give-btn" data-uid="${p.id}" data-uname="${p.username}">DONATE</button>` : ''}
+        ${(isGiver || isTaker) ? `<button class="lb-btn give player-give-btn" data-uid="${p.id}" data-uname="${p.username}" style="background:#5b8dee22;color:var(--accent);border-color:var(--accent);">DONATE</button>` : ''}
+        ${isLaferConch ? `
+        <button class="lb-btn give lc-btn" data-uid="${p.id}" data-uname="${p.username}" data-amt="1">+1</button>
+        <button class="lb-btn give lc-btn" data-uid="${p.id}" data-uname="${p.username}" data-amt="5">+5</button>
+        <button class="lb-btn take lc-btn" data-uid="${p.id}" data-uname="${p.username}" data-amt="20">-20</button>
+        <input class="lb-set-input" type="number" placeholder="set pts" data-uid="${p.id}" data-uname="${p.username}" style="width:66px;padding:3px 6px;background:#060e18;border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:11px;font-family:inherit;" title="Manually set points">
+        <button class="lb-btn lb-set-btn" data-uid="${p.id}" data-uname="${p.username}" style="background:#9b59f722;color:var(--accent2);border:1px solid var(--accent2);">SET</button>
+        ` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Attach button listeners (no inline onclick — avoids scope issues)
+  lb.querySelectorAll('.lb-btn.give:not(.player-give-btn)').forEach(btn => {
+    btn.addEventListener('click', () => givePointsTo(btn.dataset.uid, btn.dataset.uname, parseInt(btn.dataset.amt)));
+  });
+  lb.querySelectorAll('.lb-btn.take').forEach(btn => {
+    btn.addEventListener('click', () => takePointsFrom(btn.dataset.uid, btn.dataset.uname, parseInt(btn.dataset.amt)));
+  });
+  lb.querySelectorAll('.player-give-btn').forEach(btn => {
+    btn.addEventListener('click', () => openPlayerGiveModal(btn.dataset.uid, btn.dataset.uname));
+  });
+
+  // LaferConch admin quick-adjust buttons
+  lb.querySelectorAll('.lc-btn.give').forEach(btn => {
+    btn.addEventListener('click', () => givePointsTo(btn.dataset.uid, btn.dataset.uname, parseInt(btn.dataset.amt)));
+  });
+  lb.querySelectorAll('.lc-btn.take').forEach(btn => {
+    btn.addEventListener('click', () => takePointsFrom(btn.dataset.uid, btn.dataset.uname, parseInt(btn.dataset.amt)));
+  });
+  lb.querySelectorAll('.lb-set-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = lb.querySelector(`.lb-set-input[data-uid="${btn.dataset.uid}"]`);
+      const val = parseInt(input?.value);
+      if (isNaN(val)) { notify('Enter a valid number', 'error'); return; }
+      setPlayerPoints(btn.dataset.uid, btn.dataset.uname, val);
+    });
+  });
+
+  // Update user tag points
+  if (myUser) {
+    const self = data.find(p => p.id === myUser.id);
+    if (self) {
+      myUser.points = self.points;
+      const tag = document.getElementById('user-tag-pts');
+      if (tag) tag.textContent = self.points + ' pts';
+    }
+  }
+}
+
+async function setPlayerPoints(targetId, targetName, newPoints) {
+  const { error } = await sb.from('profiles').update({ points: newPoints }).eq('id', targetId);
+  if (error) { notify('Error: ' + error.message, 'error'); return; }
+  notify(`${targetName} set to ${newPoints} pts!`, 'success');
+  updateLeaderboard();
+}
+
+async function givePointsTo(targetId, targetName, amount) {
+  if (!myUser) return;
+  const { data: target } = await sb.from('profiles').select('points').eq('id', targetId).single();
+  if (!target) return;
+  await sb.from('profiles').update({ points: target.points + amount }).eq('id', targetId);
+  notify(`+${amount} given to ${targetName}!`, 'success');
+  updateLeaderboard();
+}
+
+async function takePointsFrom(targetId, targetName, amount) {
+  if (!myUser) return;
+  const { data: target } = await sb.from('profiles').select('points').eq('id', targetId).single();
+  if (!target) return;
+  const newPts = target.points - amount;
+  await sb.from('profiles').update({ points: newPts }).eq('id', targetId);
+  notify(`-${amount} penalty applied to ${targetName}`, 'error');
+  updateLeaderboard();
+}
+
+let _pgTargetId = null;
+let _pgTargetName = null;
+
+function openPlayerGiveModal(targetId, targetName) {
+  _pgTargetId = targetId;
+  _pgTargetName = targetName;
+  document.getElementById('pg-target-name').textContent = targetName;
+  document.getElementById('pg-amount').value = '';
+  document.getElementById('pg-error').textContent = '';
+  openModal('player-give-modal');
+}
+
+async function confirmPlayerGive() {
+  const amount = parseInt(document.getElementById('pg-amount').value);
+  const errEl = document.getElementById('pg-error');
+  if (!amount || amount <= 0) { errEl.textContent = 'Enter a valid amount.'; return; }
+  if (!myUser || !myUser.id) { errEl.textContent = 'Not logged in.'; return; }
+
+  // Fetch fresh self points
+  const { data: self } = await sb.from('profiles').select('points').eq('id', myUser.id).single();
+  if (!self) { errEl.textContent = 'Could not load your points.'; return; }
+  if (self.points < amount) { errEl.textContent = `You only have ${self.points} pts.`; return; }
+
+  const { data: target } = await sb.from('profiles').select('points').eq('id', _pgTargetId).single();
+  if (!target) { errEl.textContent = 'Target player not found.'; return; }
+
+  // Deduct from self, add to target
+  await sb.from('profiles').update({ points: self.points - amount }).eq('id', myUser.id);
+  await sb.from('profiles').update({ points: target.points + amount }).eq('id', _pgTargetId);
+  myUser.points = self.points - amount;
+
+  closeModal('player-give-modal');
+  notify(`Gave ${amount} pts to ${_pgTargetName}!`, 'success');
+  updateLeaderboard();
+}
+
+// ============================================================
+// CANVAS ELEMENT BINDING
+// ============================================================
+function bindCanvasElements() {
+  const canvas = document.getElementById('website-canvas');
+  // Assign cg-id to any untagged elements that look like cg elements
+  canvas.querySelectorAll('[data-cg-type]:not([data-cg-id])').forEach(el => {
+    el.dataset.cgId = nextId();
+  });
+  canvas.querySelectorAll('[data-cg-id]').forEach(el => {
+    cgIdCounter = Math.max(cgIdCounter, parseInt(el.dataset.cgId) || 0);
+    initInteractEl(el);
+  });
+}
+
+function bindButtonRuntime(el) {
+  // listeners handled by initInteractEl — just ensure interact is attached
+  initInteractEl(el);
+}
+
+async function runButtonAction(el) {
+  if (editorMode) return; // never run in edit mode
+  const action = el.dataset.action || 'none';
+  const val = parseInt(el.dataset.value) || 0;
+  const txt = el.dataset.text || '';
+
+  if (action === 'none') return;
+  if (action === 'open_modal') { openRuntimeModal(el.dataset.modalTitle || 'MESSAGE', txt); return; }
+  if (action === 'url') { window.open(el.dataset.url, '_blank'); return; }
+  if (action === 'custom_code') { try { eval(el.dataset.code); } catch(e) { notify('Script error: '+e.message,'error'); } return; }
+  if (action === 'propose_rule') { await proposeRule(); return; }
+  if (action === 'give_points') { await adjustPoints(myUser.id, val); return; }
+  if (action === 'take_points') { await adjustPoints(myUser.id, -val); return; }
+  if (action === 'give_all') { await adjustAllPoints(val); return; }
+  if (action === 'take_all') { await adjustAllPoints(-val); return; }
+}
+
+function openRuntimeModal(title, body) {
+  document.getElementById('runtime-modal-title').textContent = title;
+  document.getElementById('runtime-modal-body').textContent = body;
+  openModal('runtime-modal');
+}
+
+async function adjustPoints(profileId, delta) {
+  if (!profileId) { notify('Not logged in properly.', 'error'); return; }
+  const { data: prof } = await sb.from('profiles').select('points').eq('id', profileId).single();
+  if (!prof) { notify('Profile not found.', 'error'); return; }
+  const newPts = prof.points + delta;
+  const { error } = await sb.from('profiles').update({ points: newPts }).eq('id', profileId);
+  if (error) { notify('Error: ' + error.message, 'error'); return; }
+  if (myUser && myUser.id === profileId) myUser.points = newPts;
+  notify(`${delta > 0 ? '+' : ''}${delta} points!`, delta > 0 ? 'success' : 'error');
+  updateLeaderboard();
+}
+
+async function adjustAllPoints(delta) {
+  const { data: profs } = await sb.from('profiles').select('id, points');
+  if (!profs) return;
+  for (const p of profs) {
+    await sb.from('profiles').update({ points: p.points + delta }).eq('id', p.id);
+  }
+  notify(`${delta > 0 ? '+' : ''}${delta} points to everyone!`, delta > 0 ? 'success' : 'error');
+  updateLeaderboard();
+}
+
+// ============================================================
+// RULES DISPLAY
+// ============================================================
+function updateRulesDisplay() {
+  const el = document.getElementById('rules-display');
+  if (!el) return;
+  const base = [
+    { text: `Being COOL gives you ${siteRules.cool||1} COOLNESS POINT${(siteRules.cool||1)===1?'':'S'}`, pts: siteRules.cool||1, base: true },
+    { text: `Being KIND gives you ${siteRules.kind||5} COOLNESS POINTS`, pts: siteRules.kind||5, base: true },
+    { text: `Breaking a rule deducts ${Math.abs(siteRules.penalty||20)} COOLNESS POINTS`, pts: siteRules.penalty||-20, base: true },
+    { text: 'NO cheating — no asking Jimmy for free points, no lying about points, no stealing', pts: null, base: true },
+  ];
+  const custom = (siteRules.custom || []).filter(r => r.active !== false);
+  const all = [...base, ...custom];
+  el.innerHTML = all.map((r, i) => `
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;">
+      <span style="color:var(--accent2);font-family:'Orbitron',sans-serif;font-size:10px;flex-shrink:0;padding-top:2px;">${i+1}.</span>
+      <span style="flex:1;line-height:1.5;color:var(--text);">${r.text}</span>
+      ${r.pts !== null ? `<span style="color:${r.pts>0?'var(--accent3)':'var(--danger)'};font-size:10px;flex-shrink:0;font-family:'Orbitron',sans-serif;">${r.pts>0?'+':''}${r.pts}</span>` : ''}
+    </div>
+  `).join('');
+
+  // update propose button label
+  const btn = document.getElementById('propose-rule-btn');
+  if (btn) btn.textContent = `💡 PROPOSE A RULE (costs ${siteRules.ruleCost||50} pts)`;
+}
+
+async function proposeRule() {
+  if (!myUser || !myUser.id) { notify('You must be logged in.', 'error'); return; }
+  const cost = siteRules.ruleCost || 50;
+  if ((myUser.points||0) < cost) { notify(`Need ${cost} pts to propose a rule. You have ${myUser.points||0}.`, 'error'); return; }
+
+  const ruleText = prompt(`Propose a new rule (costs ${cost} pts from your balance):`);
+  if (!ruleText || !ruleText.trim()) return;
+
+  // Deduct points
+  const { data: fresh } = await sb.from('profiles').select('points').eq('id', myUser.id).single();
+  if (!fresh || fresh.points < cost) { notify('Not enough points.', 'error'); return; }
+
+  await sb.from('profiles').update({ points: fresh.points - cost }).eq('id', myUser.id);
+  myUser.points = fresh.points - cost;
+
+  // Add to rules
+  if (!siteRules.custom) siteRules.custom = [];
+  siteRules.custom.push({ text: ruleText.trim(), pts: 0, active: true, proposedBy: myUser.username });
+
+  // Save rules to DB
+  await sb.from('site_config').update({ rules_json: siteRules }).eq('id', 1);
+  updateRulesDisplay();
+  updateLeaderboard();
+  notify(`Rule proposed! -${cost} pts`, 'success');
+}
+
+// ============================================================
+// SIDEBAR COUNTDOWN
+// ============================================================
+function updateSidebarCountdown() {
+  const el = document.getElementById('sidebar-countdown');
+  if (!el) return;
+
+  const label = document.getElementById('end-date-label');
+  if (!endDate) {
+    el.textContent = '∞';
+    el.style.color = 'var(--muted)';
+    if (label) label.textContent = 'no end date set';
+    return;
+  }
+  if (label) label.textContent = new Date(endDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  clearInterval(endCheckInterval);
+  endCheckInterval = setInterval(() => {
+    const diff = new Date(endDate) - Date.now();
+    if (diff <= 0) {
+      clearInterval(endCheckInterval);
+      endGameNow();
+      return;
+    }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    el.innerHTML = d > 0
+      ? `${d}<span style="font-size:12px;color:var(--muted);">d</span> ${h}<span style="font-size:12px;color:var(--muted);">h</span><br>${m}<span style="font-size:12px;color:var(--muted);">m</span> ${s}<span style="font-size:12px;color:var(--muted);">s</span>`
+      : `${h}<span style="font-size:12px;color:var(--muted);">h</span> ${m}<span style="font-size:12px;color:var(--muted);">m</span> ${s}<span style="font-size:12px;color:var(--muted);">s</span>`;
+    el.style.color = diff < 3600000 ? 'var(--danger)' : 'var(--accent)';
+  }, 1000);
+}
+
+// ============================================================
+// EDITOR MODE
+// ============================================================
+function setEditorMode(mode) {
+  const same = editorMode === mode;
+  editorMode = same ? null : mode;
+
+  document.getElementById('btn-layout').classList.toggle('active', editorMode === 'layout');
+  document.getElementById('btn-rules').classList.toggle('active', editorMode === 'rules');
+  document.getElementById('btn-roles').classList.toggle('active', editorMode === 'roles');
+  document.getElementById('btn-add').style.display = editorMode === 'layout' ? 'inline-flex' : 'none';
+  document.getElementById('btn-undo').style.display = editorMode === 'layout' ? 'inline-flex' : 'none';
+  document.getElementById('btn-redo').style.display = editorMode === 'layout' ? 'inline-flex' : 'none';
+  document.getElementById('btn-reset').style.display = editorMode === 'layout' ? 'inline-flex' : 'none';
+  document.getElementById('mode-label').textContent = editorMode ? editorMode.toUpperCase() : 'SPECTATOR';
+
+  document.body.className = editorMode === 'layout' ? 'edit-layout-mode' : '';
+
+  const panel = document.getElementById('side-panel');
+  const elTb = document.getElementById('el-toolbar');
+
+  if (!editorMode) {
+    panel.style.display = 'none';
+    elTb.style.display = 'none';
+    selectElement(null);
+    return;
+  }
+
+  panel.style.display = 'flex';
+  elTb.style.display = editorMode === 'layout' ? 'flex' : 'none';
+
+  if (editorMode === 'rules') renderRulesPanel();
+  if (editorMode === 'roles') renderRolesPanel();
+  if (editorMode === 'layout') renderLayoutPanel();
+}
+
+// ============================================================
+// PANEL: LAYOUT
+// ============================================================
+function renderLayoutPanel() {
+  const panel = document.getElementById('side-panel');
+  // read current CSS vars from :root
+  const rs = getComputedStyle(document.documentElement);
+  const cv = (v) => {
+    const val = rs.getPropertyValue(v).trim();
+    // try to convert to hex for color inputs
+    if (!val) return '#000000';
+    // if already hex
+    if (val.startsWith('#')) return val;
+    // try rgb
+    const tmp = document.createElement('div');
+    tmp.style.color = val;
+    document.body.appendChild(tmp);
+    const computed = getComputedStyle(tmp).color;
+    tmp.remove();
+    return rgbToHex(computed) || '#000000';
+  };
+
+  panel.innerHTML = `
+    <div class="panel-header">LAYOUT</div>
+
+    <div class="panel-section">
+      <h3>THEME COLORS</h3>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.6;">Changes apply live. Hit SAVE when done.</div>
+
+      <div class="panel-row"><label>Background</label>
+        <input type="color" class="theme-swatch" data-var="--bg" value="${cv('--bg')}" oninput="applyThemeVar(this)"></div>
+
+      <div class="panel-row"><label>Surface (cards)</label>
+        <input type="color" class="theme-swatch" data-var="--surface" value="${cv('--surface')}" oninput="applyThemeVar(this)"></div>
+
+      <div class="panel-row"><label>Border</label>
+        <input type="color" class="theme-swatch" data-var="--border" value="${cv('--border')}" oninput="applyThemeVar(this)"></div>
+
+      <div class="panel-row"><label>Accent (blue)</label>
+        <input type="color" class="theme-swatch" data-var="--accent" value="${cv('--accent')}" oninput="applyThemeVar(this)"></div>
+
+      <div class="panel-row"><label>Accent 2 (purple)</label>
+        <input type="color" class="theme-swatch" data-var="--accent2" value="${cv('--accent2')}" oninput="applyThemeVar(this)"></div>
+
+      <div class="panel-row"><label>Accent 3 (green)</label>
+        <input type="color" class="theme-swatch" data-var="--accent3" value="${cv('--accent3')}" oninput="applyThemeVar(this)"></div>
+
+      <div class="panel-row"><label>Text color</label>
+        <input type="color" class="theme-swatch" data-var="--text" value="${cv('--text')}" oninput="applyThemeVar(this)"></div>
+
+      <div class="panel-row"><label>Muted text</label>
+        <input type="color" class="theme-swatch" data-var="--muted" value="${cv('--muted')}" oninput="applyThemeVar(this)"></div>
+
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="panel-btn" onclick="applyPreset('blue-purple')" style="flex:1;font-size:10px;">🔵 Blue/Purple</button>
+        <button class="panel-btn" onclick="applyPreset('green-teal')" style="flex:1;font-size:10px;">🟢 Green/Teal</button>
+        <button class="panel-btn" onclick="applyPreset('purple-pink')" style="flex:1;font-size:10px;">🟣 Purple/Pink</button>
+        <button class="panel-btn" onclick="applyPreset('dark-green')" style="flex:1;font-size:10px;">💚 Dark Green</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>CUSTOM CSS</h3>
+      <textarea class="panel-input wide" id="panel-css" style="height:70px;width:100%;" placeholder="body { background: #000; }">${document.getElementById('live-css-injection').textContent}</textarea>
+      <button class="panel-btn" onclick="applyCSS()" style="margin-top:6px">▶ APPLY CSS</button>
+    </div>
+    <div class="panel-section">
+      <h3>TIPS</h3>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8;">
+        <b style="color:var(--text)">Click</b> — select element<br>
+        <b style="color:var(--text)">Drag</b> — move element<br>
+        <b style="color:var(--text)">Drag edge</b> — resize<br>
+        <b style="color:var(--text)">Dbl-click button</b> — edit action<br>
+        <b style="color:var(--text)">Dbl-click text</b> — edit text
+      </div>
+    </div>
+    <div class="panel-section">
+      <h3>SELECTED ELEMENT</h3>
+      <div id="panel-el-props" style="color:var(--muted);font-size:12px;">Click an element to inspect.</div>
+    </div>
+  `;
+}
+
+function applyCSS() {
+  const css = document.getElementById('panel-css')?.value || '';
+  document.getElementById('live-css-injection').textContent = css;
+}
+
+function applyThemeVar(input) {
+  document.documentElement.style.setProperty(input.dataset.var, input.value);
+}
+
+const PRESETS = {
+  'blue-purple': {
+    '--bg':'#08090f','--surface':'#0d0f1a','--border':'#1e2040',
+    '--accent':'#5b8dee','--accent2':'#7c4dff','--accent3':'#00c9a7',
+    '--text':'#ccd6f6','--muted':'#4a5080'
+  },
+  'green-teal': {
+    '--bg':'#060f0c','--surface':'#0a1810','--border':'#1a3028',
+    '--accent':'#00e676','--accent2':'#00bcd4','--accent3':'#69f0ae',
+    '--text':'#ccf0e0','--muted':'#3a6050'
+  },
+  'purple-pink': {
+    '--bg':'#0c080f','--surface':'#160d1e','--border':'#2a1840',
+    '--accent':'#b388ff','--accent2':'#f48fb1','--accent3':'#ea80fc',
+    '--text':'#e8d0f8','--muted':'#5a3870'
+  },
+  'dark-green': {
+    '--bg':'#040d06','--surface':'#08160a','--border':'#143020',
+    '--accent':'#00c853','--accent2':'#76ff03','--accent3':'#18ffff',
+    '--text':'#c8f0d0','--muted':'#2a5030'
+  }
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  Object.entries(p).forEach(([k, v]) => {
+    document.documentElement.style.setProperty(k, v);
+  });
+  // re-render the panel so swatches update
+  renderLayoutPanel();
+  notify('Theme applied! Save to keep it.', 'success');
+}
+
+function getThemeCSS() {
+  const rs = document.documentElement.style;
+  const vars = ['--bg','--surface','--border','--accent','--accent2','--accent3','--text','--muted','--danger','--success','--gold'];
+  let out = ':root {\n';
+  vars.forEach(v => {
+    const val = rs.getPropertyValue(v);
+    if (val) out += '  ' + v + ': ' + val + ';\n';
+  });
+  out += '}';
+  return out;
+}
+
+// ============================================================
+// PANEL: RULES
+// ============================================================
+function renderRulesPanel() {
+  const panel = document.getElementById('side-panel');
+  const cr = siteRules.custom || [];
+
+  panel.innerHTML = `
+    <div class="panel-header">RULES EDITOR</div>
+    <div class="panel-section">
+      <h3>BASE POINT VALUES</h3>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;">Controls the +cool, +kind, -penalty buttons on the leaderboard.</div>
+      <div class="panel-row">
+        <label>Being COOL gives</label>
+        <input class="panel-input" type="number" id="r-cool" value="${siteRules.cool||1}" style="width:64px;">
+        <span style="font-size:10px;color:var(--muted);">pts</span>
+      </div>
+      <div class="panel-row">
+        <label>Being KIND gives</label>
+        <input class="panel-input" type="number" id="r-kind" value="${siteRules.kind||5}" style="width:64px;">
+        <span style="font-size:10px;color:var(--muted);">pts</span>
+      </div>
+      <div class="panel-row">
+        <label>Breaking a rule</label>
+        <input class="panel-input" type="number" id="r-penalty" value="${siteRules.penalty||-20}" style="width:64px;">
+        <span style="font-size:10px;color:var(--muted);">pts</span>
+      </div>
+      <div class="panel-row">
+        <label>Propose rule costs</label>
+        <input class="panel-input" type="number" id="r-rule-cost" value="${siteRules.ruleCost||50}" style="width:64px;">
+        <span style="font-size:10px;color:var(--muted);">pts</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>CUSTOM RULES <span style="color:var(--muted);font-size:9px;">(drag to reorder)</span></h3>
+      <div id="custom-rules-list" style="margin-bottom:8px;">
+        ${cr.length === 0
+          ? '<p style="color:var(--muted);font-size:11px;margin:0;">No custom rules yet. Add one below.</p>'
+          : cr.map((r, i) => `
+          <div class="cr-row" data-cr-index="${i}" style="background:#060e18;border:1px solid var(--border);border-radius:7px;padding:9px;margin-bottom:6px;">
+            <div style="display:flex;gap:4px;align-items:center;margin-bottom:5px;">
+              <span style="color:var(--muted);font-size:11px;cursor:grab;padding:0 4px;" class="cr-handle">⠿</span>
+              <input class="panel-input" style="flex:1;font-size:11px;" type="text" id="cr-text-${i}" value="${(r.text||'').replace(/"/g,'&quot;')}" placeholder="Rule text">
+              <button id="cr-up-${i}" style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;font-size:10px;" title="Move up">▲</button>
+              <button id="cr-dn-${i}" style="padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;font-size:10px;" title="Move down">▼</button>
+              <button id="cr-del-${i}" style="padding:2px 6px;border:1px solid var(--danger);border-radius:4px;background:transparent;color:var(--danger);cursor:pointer;font-size:10px;">✕</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;color:var(--muted);">pts:</span>
+              <input class="panel-input" type="number" id="cr-pts-${i}" value="${r.pts||0}" style="width:64px;">
+              <span style="font-size:10px;color:var(--muted);">(neg = penalty)</span>
+            </div>
+          </div>`).join('')}
+      </div>
+      <button id="add-cr-btn" class="panel-btn" style="border-color:var(--accent3);color:var(--accent3);margin-bottom:4px;">+ ADD CUSTOM RULE</button>
+    </div>
+
+    <div class="panel-section">
+      <button id="save-rules-btn" class="panel-btn" style="background:var(--accent);color:#000;border-color:var(--accent);width:100%;padding:11px;font-size:13px;letter-spacing:1px;">💾 SAVE ALL RULES</button>
+    </div>
+  `;
+
+  // Wire all buttons via addEventListener — NO inline onclick
+  document.getElementById('save-rules-btn').addEventListener('click', saveAllRules);
+  document.getElementById('add-cr-btn').addEventListener('click', addCustomRule);
+
+  cr.forEach((r, i) => {
+    const del = document.getElementById('cr-del-' + i);
+    const up  = document.getElementById('cr-up-'  + i);
+    const dn  = document.getElementById('cr-dn-'  + i);
+    if (del) del.addEventListener('click', () => { collectCustomRules(); removeCustomRule(i); });
+    if (up)  up.addEventListener('click',  () => { collectCustomRules(); moveCustomRule(i, -1); });
+    if (dn)  dn.addEventListener('click',  () => { collectCustomRules(); moveCustomRule(i, +1); });
+  });
+}
+
+// Collect current DOM state into siteRules.custom before any reorder/delete
+function collectCustomRules() {
+  if (!siteRules.custom) return;
+  siteRules.custom = siteRules.custom.map((r, i) => ({
+    text: document.getElementById('cr-text-' + i)?.value?.trim() || r.text,
+    pts:  parseInt(document.getElementById('cr-pts-' + i)?.value) || 0
+  }));
+}
+
+function moveCustomRule(i, dir) {
+  const arr = siteRules.custom || [];
+  const j = i + dir;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  siteRules.custom = arr;
+  renderRulesPanel();
+}
+
+function addCustomRule() {
+  if (!siteRules.custom) siteRules.custom = [];
+  siteRules.custom.push({ text: 'New rule description', pts: 0 });
+  renderRulesPanel();
+}
+
+function removeCustomRule(i) {
+  if (!siteRules.custom) return;
+  siteRules.custom.splice(i, 1);
+  renderRulesPanel();
+}
+
+async function saveRulesFromPanel() {
+  // partial update — just the base values
+  siteRules.cool    = parseInt(document.getElementById('r-cool')?.value)    || siteRules.cool;
+  siteRules.kind    = parseInt(document.getElementById('r-kind')?.value)    || siteRules.kind;
+  siteRules.penalty = parseInt(document.getElementById('r-penalty')?.value) || siteRules.penalty;
+}
+
+async function saveAllRules() {
+  // Read base values — keep existing if input missing
+  const readInt = (id, fallback) => {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    const v = parseInt(el.value);
+    return isNaN(v) ? fallback : v;
+  };
+
+  // Collect custom rules from DOM
+  const customRules = (siteRules.custom || []).map((r, i) => ({
+    text: document.getElementById('cr-text-' + i)?.value?.trim() || r.text,
+    pts:  readInt('cr-pts-' + i, r.pts || 0)
+  }));
+
+  siteRules = {
+    cool:     readInt('r-cool',      siteRules.cool     || 1),
+    kind:     readInt('r-kind',      siteRules.kind     || 5),
+    penalty:  readInt('r-penalty',   siteRules.penalty  || -20),
+    ruleCost: readInt('r-rule-cost', siteRules.ruleCost || 50),
+    giverMult:    siteRules.giverMult    || 2,
+    takerPenalty: siteRules.takerPenalty || -20,
+    custom: customRules
+  };
+
+  const { error } = await sb.from('site_config').update({ rules_json: siteRules }).eq('id', 1);
+  if (error) {
+    notify('Error saving rules: ' + error.message, 'error');
+  } else {
+    notify('Rules saved!', 'success');
+    updateRulesDisplay();
+    updateLeaderboard();
+  }
+}
+
+// ============================================================
+// PANEL: ROLES / PLAYERS
+// ============================================================
+async function renderRolesPanel() {
+  const panel = document.getElementById('side-panel');
+  panel.innerHTML = `
+    <div class="panel-header">ROLES & PLAYERS</div>
+    <div class="panel-section">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;line-height:1.8;">
+        <span style="color:var(--muted);">■</span> <b>Player</b> — donate own points only<br>
+        <span style="color:var(--accent3);">■</span> <b>Giver</b> — give pts to others + donate<br>
+        <span style="color:var(--danger);">■</span> <b>Taker</b> — take pts from others + donate<br>
+        <span style="color:var(--gold);">■</span> <b>Judge</b> — give + take + donate<br>
+        <span style="color:var(--accent2);">■</span> <b>Admin</b> — full editor access, no point buttons
+      </div>
+      <div id="roles-list"><p style="color:var(--muted);font-size:12px;">Loading...</p></div>
+    </div>`;
+
+  const { data: players, error } = await sb.from('profiles').select('id, username, points, role').order('points', { ascending: false });
+  if (error || !players) {
+    document.getElementById('roles-list').innerHTML = '<p style="color:var(--danger);font-size:12px;">Error: ' + (error?.message||'could not load') + '</p>';
+    return;
+  }
+
+  const list = document.getElementById('roles-list');
+  list.innerHTML = players.map((p, idx) => `
+    <div class="player-row" style="flex-wrap:wrap;gap:6px;padding:10px 0;">
+      <div class="player-name" style="width:100%;font-size:13px;color:var(--text);">${p.username} <span style="color:var(--muted);font-size:10px;">(${p.points} pts)</span></div>
+      <input class="panel-input" type="number" value="${p.points}" id="ppts-${idx}" style="width:72px;" placeholder="pts">
+      <select class="role-select" id="prole-${idx}" style="flex:1;">
+        ${['Player','Giver','Taker','Judge','Admin'].map(r => `<option value="${r}"${p.role===r?' selected':''}>${r}</option>`).join('')}
+      </select>
+      <button id="psave-${idx}" style="padding:5px 10px;border:1px solid var(--accent3);border-radius:5px;background:transparent;color:var(--accent3);font-family:inherit;font-size:11px;cursor:pointer;">SAVE</button>
+    </div>`).join('') + '<div style="font-size:10px;color:var(--muted);margin-top:8px;">Click SAVE per row to apply.</div>';
+
+  // Wire each row's SAVE button
+  players.forEach((p, idx) => {
+    const btn = document.getElementById('psave-' + idx);
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const newPts  = parseInt(document.getElementById('ppts-' + idx)?.value);
+      const newRole = document.getElementById('prole-' + idx)?.value;
+      btn.textContent = '...';
+      btn.disabled = true;
+
+      const updates = {};
+      if (!isNaN(newPts))  updates.points = newPts;
+      if (newRole)         updates.role   = newRole;
+
+      const { error: e } = await sb.from('profiles').update(updates).eq('id', p.id);
+      if (e) {
+        notify('Error: ' + e.message, 'error');
+      } else {
+        notify(p.username + ' updated!', 'success');
+        updateLeaderboard();
+      }
+      btn.textContent = '✓ SAVED';
+      setTimeout(() => { btn.textContent = 'SAVE'; btn.disabled = false; }, 2000);
+    });
+  });
+}
+
+// updatePlayerPts and updatePlayerRole are now handled inline in renderRolesPanel
+async function updatePlayerPts(id, val) {
+  const { error } = await sb.from('profiles').update({ points: parseInt(val) }).eq('id', id);
+  if (error) notify('Error: ' + error.message, 'error');
+  else updateLeaderboard();
+}
+async function updatePlayerRole(id, role) {
+  const { error } = await sb.from('profiles').update({ role }).eq('id', id);
+  if (error) notify('Error: ' + error.message, 'error');
+  else updateLeaderboard();
+}
+
+// ============================================================
+// ELEMENT SELECTION & TOOLBAR
+// ============================================================
+function selectElement(el) {
+  if (selectedEl) selectedEl.classList.remove('selected');
+  selectedEl = el;
+  if (el) {
+    el.classList.add('selected');
+    const cs = getComputedStyle(el);
+    document.getElementById('el-selected-info').textContent = el.dataset.cgType + ' #' + el.dataset.cgId;
+    document.getElementById('el-color').value        = rgbToHex(cs.color) || '#ccd6f6';
+    document.getElementById('el-bg').value           = rgbToHex(cs.backgroundColor) || '#0d0f1a';
+    document.getElementById('el-border-color').value = rgbToHex(cs.borderTopColor) || '#1e2040';
+    document.getElementById('el-border-width').value = el.style.borderWidth || '';
+    document.getElementById('el-size').value         = el.style.fontSize || '';
+    document.getElementById('el-radius').value       = el.style.borderRadius || '';
+    document.getElementById('el-padding').value      = el.style.padding || '';
+    // opacity
+    const op = parseFloat(el.style.opacity);
+    const opVal = isNaN(op) ? 100 : Math.round(op * 100);
+    document.getElementById('el-opacity').value = opVal;
+    document.getElementById('el-opacity-val').textContent = opVal + '%';
+    // font weight
+    const fw = el.style.fontWeight || cs.fontWeight || '';
+    const wSel = document.getElementById('el-weight');
+    wSel.value = ['300','400','700','900'].includes(fw) ? fw : '';
+    // font family — match to dropdown
+    const curFont = (el.style.fontFamily || '').replace(/['"]/g,'').toLowerCase();
+    const fontSel = document.getElementById('el-font');
+    let matched = '';
+    for (let i = 1; i < fontSel.options.length; i++) {
+      const optFont = fontSel.options[i].value.replace(/['"]/g,'').split(',')[0].trim().toLowerCase();
+      if (curFont.startsWith(optFont)) { matched = fontSel.options[i].value; break; }
+    }
+    fontSel.value = matched;
+    if (editorMode === 'layout') updateLayoutProps(el);
+  } else {
+    document.getElementById('el-selected-info').textContent = 'nothing selected';
+  }
+}
+
+function updateLayoutProps(el) {
+  const props = document.getElementById('panel-el-props');
+  if (!props) return;
+  props.innerHTML = `
+    <div class="panel-row"><label>LABEL/CONTENT</label></div>
+    <input class="panel-input wide" style="width:100%;margin-bottom:8px;" type="text" value="${el.dataset.cgType === 'button' ? el.textContent.trim() : ''}" id="prop-label">
+    <button class="panel-btn" onclick="applyPropLabel()">APPLY LABEL</button>
+    ${el.dataset.cgType === 'button' ? `<button class="panel-btn" onclick="openButtonActionModal(selectedEl)" style="margin-top:4px">⚙️ EDIT BUTTON ACTION</button>` : ''}
+  `;
+}
+
+function applyPropLabel() {
+  if (!selectedEl) return;
+  const lbl = document.getElementById('prop-label')?.value;
+  if (lbl !== undefined) selectedEl.textContent = lbl;
+}
+
+function applyElStyle() {
+  if (!selectedEl) return;
+  snapshot();
+  const v = id => document.getElementById(id)?.value;
+  const color  = v('el-color');
+  const bg     = v('el-bg');
+  const border = v('el-border-color');
+  const bw     = v('el-border-width');
+  const sz     = v('el-size');
+  const font   = v('el-font');
+  const weight = v('el-weight');
+  const radius = v('el-radius');
+  const pad    = v('el-padding');
+  const opEl   = document.getElementById('el-opacity');
+
+  if (color)  selectedEl.style.color           = color;
+  if (bg)     selectedEl.style.backgroundColor = bg;
+  if (border) selectedEl.style.borderColor     = border;
+  if (bw)     { selectedEl.style.borderWidth = bw; selectedEl.style.borderStyle = selectedEl.style.borderStyle || 'solid'; }
+  if (sz)     selectedEl.style.fontSize        = sz.includes('px') || sz.includes('em') || sz.includes('%') ? sz : sz + 'px';
+  if (font)   selectedEl.style.fontFamily      = font;
+  if (weight) selectedEl.style.fontWeight      = weight;
+  if (radius) selectedEl.style.borderRadius    = radius.includes('px') || radius.includes('%') ? radius : radius + 'px';
+  if (pad)    selectedEl.style.padding         = pad;
+  if (opEl)   selectedEl.style.opacity         = opEl.value / 100;
+}
+
+function setAlign(align) {
+  if (!selectedEl) return;
+  selectedEl.style.textAlign = align;
+}
+
+function duplicateSelected() {
+  if (!selectedEl) return;
+  snapshot();
+  const clone = selectedEl.cloneNode(true);
+  clone.dataset.cgId = nextId();
+  clone.classList.remove('selected');
+  clone.style.left = (parseFloat(selectedEl.style.left)||0) + 20 + 'px';
+  clone.style.top  = (parseFloat(selectedEl.style.top)||0)  + 20 + 'px';
+  document.getElementById('website-canvas').appendChild(clone);
+  initInteractEl(clone);
+  selectElement(clone);
+}
+
+function bringForward() { if (selectedEl) { snapshot(); selectedEl.style.zIndex = (parseInt(selectedEl.style.zIndex||0)+1)+''; } }
+function sendBackward() { if (selectedEl) { snapshot(); selectedEl.style.zIndex = (parseInt(selectedEl.style.zIndex||0)-1)+''; } }
+function deleteSelectedNoConfirm() {
+  if (!selectedEl) return;
+  snapshot();
+  selectedEl.remove();
+  selectedEl = null;
+  document.getElementById('el-selected-info').textContent = 'nothing selected';
+}
+
+function deleteSelected() {
+  if (!selectedEl) return;
+  if (confirm('Delete this element?')) {
+    snapshot();
+    selectedEl.remove();
+    selectedEl = null;
+    document.getElementById('el-selected-info').textContent = 'nothing selected';
+  }
+}
+
+// ============================================================
+// UNDO / REDO / RESET
+// ============================================================
+function snapshot() {
+  if (_snapshotPaused) return;
+  const canvas = document.getElementById('website-canvas');
+  if (!canvas) return;
+  undoStack.push(canvas.innerHTML);
+  if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+  redoStack = []; // new action clears redo
+  updateUndoRedoBtns();
+}
+
+function undo() {
+  if (undoStack.length === 0) { notify('Nothing to undo', 'error'); return; }
+  const canvas = document.getElementById('website-canvas');
+  redoStack.push(canvas.innerHTML);
+  _snapshotPaused = true;
+  canvas.innerHTML = undoStack.pop();
+  _snapshotPaused = false;
+  bindCanvasElements();
+  initInteract();
+  selectElement(null);
+  updateUndoRedoBtns();
+  notify('Undone', 'success');
+}
+
+function redo() {
+  if (redoStack.length === 0) { notify('Nothing to redo', 'error'); return; }
+  const canvas = document.getElementById('website-canvas');
+  undoStack.push(canvas.innerHTML);
+  _snapshotPaused = true;
+  canvas.innerHTML = redoStack.pop();
+  _snapshotPaused = false;
+  bindCanvasElements();
+  initInteract();
+  selectElement(null);
+  updateUndoRedoBtns();
+  notify('Redone', 'success');
+}
+
+function updateUndoRedoBtns() {
+  const u = document.getElementById('btn-undo');
+  const r = document.getElementById('btn-redo');
+  if (u) u.style.opacity = undoStack.length ? '1' : '0.35';
+  if (r) r.style.opacity = redoStack.length ? '1' : '0.35';
+}
+
+function resetCanvas() {
+  if (!confirm('Reset the canvas to the default layout? This cannot be undone unless you undo immediately after.')) return;
+  snapshot(); // save current state so it CAN be undone
+  const canvas = document.getElementById('website-canvas');
+  canvas.innerHTML = '<div style="color:var(--muted);padding:40px;font-size:14px;">Canvas is empty. Use the Layout editor to add elements.</div>';
+  selectElement(null);
+  notify('Canvas reset. You can undo this.', 'success');
+}
+
+// keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (editorMode !== 'layout') return;
+  // don't fire when typing in inputs
+  if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEl) { e.preventDefault(); deleteSelectedNoConfirm(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); duplicateSelected(); }
+});
+
+// ============================================================
+// ADD ELEMENTS
+// ============================================================
+function toggleAddPalette() {
+  const p = document.getElementById('add-palette');
+  p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function nextId() { return ++cgIdCounter; }
+
+function addElement(type) {
+  document.getElementById('add-palette').style.display = 'none';
+  snapshot();
+  const canvas = document.getElementById('website-canvas');
+  const id = nextId();
+  let el;
+
+  if (type === 'button') {
+    el = document.createElement('div');
+    el.className = '';
+    el.dataset.cgType = 'button';
+    el.dataset.cgId = id;
+    el.dataset.action = 'none';
+    el.textContent = 'NEW BUTTON';
+    el.style.cssText = `position:absolute; left:100px; top:100px; padding:12px 24px; border:2px solid var(--accent); border-radius:8px; color:var(--accent); font-family:'Orbitron',sans-serif; font-size:13px; letter-spacing:2px; cursor:pointer; background:transparent;`;
+    bindButtonRuntime(el);
+  } else if (type === 'text') {
+    el = document.createElement('div');
+    el.dataset.cgType = 'text';
+    el.dataset.cgId = id;
+    el.textContent = 'New Text';
+    el.style.cssText = `position:absolute; left:100px; top:100px; font-size:18px; color:var(--text); cursor:move; min-width:80px; min-height:24px;`;
+  } else if (type === 'container') {
+    el = document.createElement('div');
+    el.dataset.cgType = 'container';
+    el.dataset.cgId = id;
+    el.textContent = '';
+    el.style.cssText = `position:absolute; left:100px; top:100px; width:280px; min-height:120px; border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:24px;`;
+  } else if (type === 'leaderboard') {
+    el = document.createElement('div');
+    el.id = 'leaderboard';
+    el.dataset.cgType = 'leaderboard';
+    el.dataset.cgId = id;
+    el.style.cssText = `position:absolute; left:100px; top:100px; width:280px;`;
+    el.innerHTML = '<h2 class="lb-title" style="font-family:Orbitron,sans-serif;font-size:14px;color:var(--accent);letter-spacing:4px;margin:0 0 16px;">LEADERBOARD</h2>';
+    updateLeaderboard();
+  } else if (type === 'image') {
+    const url = prompt('Image URL:');
+    if (!url) return;
+    el = document.createElement('img');
+    el.src = url;
+    el.dataset.cgType = 'image';
+    el.dataset.cgId = id;
+    el.style.cssText = `position:absolute; left:100px; top:100px; width:200px; height:auto; border-radius:8px;`;
+  } else if (type === 'divider') {
+    el = document.createElement('hr');
+    el.dataset.cgType = 'divider';
+    el.dataset.cgId = id;
+    el.style.cssText = `position:absolute; left:50px; top:200px; width:400px; border:none; border-top:1px solid var(--border);`;
+  }
+
+  if (!el) return;
+  canvas.appendChild(el);
+  initInteractEl(el);
+  selectElement(el);
+}
+
+// ============================================================
+// INTERACT.JS — DRAG + RESIZE
+// ============================================================
+function initInteract() {
+  const canvas = document.getElementById('website-canvas');
+  canvas.querySelectorAll('[data-cg-id]').forEach(el => initInteractEl(el));
+}
+
+function initInteractEl(el) {
+  // touch-action must be none for interact.js drag to work
+  el.style.touchAction = 'none';
+  el.style.userSelect = 'none';
+
+  interact(el)
+    .draggable({
+      listeners: {
+        start(e) {
+          if (editorMode !== 'layout') return;
+          snapshot();
+        },
+        move(e) {
+          if (editorMode !== 'layout') return;
+          // If element has a centering transform, clear it first and set explicit left
+          if (e.target.style.transform && e.target.style.transform.includes('translate')) {
+            const rect = e.target.getBoundingClientRect();
+            const canvasRect = document.getElementById('website-canvas').getBoundingClientRect();
+            e.target.style.transform = '';
+            e.target.style.left = (rect.left - canvasRect.left) + 'px';
+            e.target.style.top  = (rect.top  - canvasRect.top)  + 'px';
+          }
+          const x = (parseFloat(e.target.style.left) || 0) + e.dx;
+          const y = (parseFloat(e.target.style.top)  || 0) + e.dy;
+          e.target.style.left = x + 'px';
+          e.target.style.top  = y + 'px';
+        }
+      }
+    })
+    .resizable({
+      edges: { right: true, bottom: true, bottomRight: '.resize-handle' },
+      listeners: {
+        start(e) {
+          if (editorMode !== 'layout') return;
+          snapshot();
+        },
+        move(e) {
+          if (editorMode !== 'layout') return;
+          e.target.style.width  = e.rect.width  + 'px';
+          e.target.style.height = e.rect.height + 'px';
+        }
+      }
+    });
+
+  // Native click: select in layout mode, run action otherwise
+  el.addEventListener('click', (e) => {
+    if (editorMode === 'layout') {
+      e.stopPropagation();
+      selectElement(el);
+      return;
+    }
+    // only run action if not in any editor mode
+    if (!editorMode && el.dataset.cgType === 'button') runButtonAction(el);
+  });
+
+  // Native dblclick: open button action editor in layout mode
+  el.addEventListener('dblclick', (e) => {
+    if (editorMode === 'layout') {
+      e.stopPropagation();
+      if (el.dataset.cgType === 'button') openButtonActionModal(el);
+      if (el.dataset.cgType === 'text') startTextEdit(el);
+    }
+  });
+}
+
+function startTextEdit(el) {
+  el.contentEditable = true;
+  el.focus();
+  // select all text
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  el.addEventListener('blur', () => { el.contentEditable = false; }, { once: true });
+  el.addEventListener('keydown', (e) => { if (e.key === 'Escape') { el.blur(); } });
+}
+
+// Click canvas background = deselect
+document.getElementById('website-canvas')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('website-canvas') && editorMode === 'layout') selectElement(null);
+});
+
+// ============================================================
+// BUTTON ACTION MODAL
+// ============================================================
+function openButtonActionModal(el) {
+  editingButtonEl = el;
+  document.getElementById('ba-label').value = el.textContent.trim();
+  document.getElementById('ba-action').value = el.dataset.action || 'none';
+  updateActionFields();
+  // fill existing values
+  const act = el.dataset.action;
+  if (act === 'give_points' || act === 'take_points' || act === 'give_all' || act === 'take_all') {
+    setTimeout(() => { document.getElementById('ba-value') && (document.getElementById('ba-value').value = el.dataset.value || 10); }, 10);
+  }
+  if (act === 'open_modal') {
+    setTimeout(() => {
+      document.getElementById('ba-modal-title') && (document.getElementById('ba-modal-title').value = el.dataset.modalTitle || '');
+      document.getElementById('ba-modal-text') && (document.getElementById('ba-modal-text').value = el.dataset.text || '');
+    }, 10);
+  }
+  if (act === 'url') setTimeout(() => { document.getElementById('ba-url') && (document.getElementById('ba-url').value = el.dataset.url || ''); }, 10);
+  if (act === 'custom_code') setTimeout(() => { document.getElementById('ba-code') && (document.getElementById('ba-code').value = el.dataset.code || ''); }, 10);
+  openModal('btn-action-modal');
+}
+
+function updateActionFields() {
+  const act = document.getElementById('ba-action').value;
+  const extra = document.getElementById('ba-extra');
+  const pointsFields = `
+    <div class="modal-field"><label>POINTS AMOUNT</label><input type="number" class="panel-input wide" id="ba-value" value="10" style="width:100%"></div>
+  `;
+  const map = {
+    open_modal: `
+      <div class="modal-field"><label>MODAL TITLE</label><input type="text" id="ba-modal-title" placeholder="Message Title"></div>
+      <div class="modal-field"><label>MODAL BODY</label><textarea id="ba-modal-text" placeholder="What should the modal say?"></textarea></div>
+    `,
+    give_points: pointsFields,
+    take_points: pointsFields,
+    give_all: pointsFields,
+    take_all: pointsFields,
+    url: `<div class="modal-field"><label>URL</label><input type="url" id="ba-url" placeholder="https://..."></div>`,
+    custom_code: `
+      <div class="modal-field"><label>JAVASCRIPT CODE</label>
+      <textarea id="ba-code" placeholder="// e.g.: alert('hello!')&#10;// myUser is available" style="font-family:monospace;font-size:12px;"></textarea></div>
+      <p style="font-size:11px;color:var(--muted);">Available: myUser, sb, updateLeaderboard(), adjustPoints(), notify()</p>
+    `
+  };
+  extra.innerHTML = map[act] || '';
+}
+
+function saveButtonAction() {
+  const el = editingButtonEl;
+  if (!el) return;
+  snapshot();
+  el.textContent = document.getElementById('ba-label').value || 'BUTTON';
+  const act = document.getElementById('ba-action').value;
+  el.dataset.action = act;
+  if (act === 'give_points' || act === 'take_points' || act === 'give_all' || act === 'take_all') {
+    el.dataset.value = document.getElementById('ba-value')?.value || 0;
+  }
+  if (act === 'open_modal') {
+    el.dataset.modalTitle = document.getElementById('ba-modal-title')?.value || 'MESSAGE';
+    el.dataset.text = document.getElementById('ba-modal-text')?.value || '';
+  }
+  if (act === 'url') el.dataset.url = document.getElementById('ba-url')?.value || '';
+  if (act === 'custom_code') el.dataset.code = document.getElementById('ba-code')?.value || '';
+  closeModal('btn-action-modal');
+  notify('Button saved!', 'success');
+}
+
+// ============================================================
+// SAVE TO DATABASE
+// ============================================================
+async function saveSiteToServer() {
+  const canvas = document.getElementById('website-canvas');
+  if (selectedEl) selectedEl.classList.remove('selected');
+  const canvasHTML = canvas.innerHTML;
+  if (selectedEl) selectedEl.classList.add('selected');
+
+  // merge theme vars + custom css
+  const themeCss = getThemeCSS();
+  const customCss = document.getElementById('live-css-injection').textContent || '';
+  // strip any existing :root block from customCss to avoid duplication
+  const cleanCustom = customCss.replace(/:root\s*\{[^}]*\}/g, '').trim();
+  const fullCss = themeCss + (cleanCustom ? '\n' + cleanCustom : '');
+
+  const { error } = await sb.from('site_config').update({
+    html_body: canvasHTML,
+    custom_css: fullCss,
+    rules_json: siteRules,
+    role_rules: roleRules
+  }).eq('id', 1);
+
+  if (error) notify('Save error: ' + error.message, 'error');
+  else notify('Saved!', 'success');
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ============================================================
+// UTILS
+// ============================================================
+function rgbToHex(rgb) {
+  if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#000000';
+  const m = rgb.match(/\d+/g);
+  if (!m) return '#000000';
+  return '#' + [m[0],m[1],m[2]].map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(() => {
+  // No session management — just show the login screen
+  document.getElementById('auth-screen').style.display = 'flex';
+})();
+</script>
+</body>
+</html>
